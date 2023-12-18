@@ -1,6 +1,12 @@
-<h1>Hello World</h1>
-<p>{{sentence|safe}}</p>
-<h2>Fruits:</h2>
-{% for fruits in fruits%}
-    {{fruits}}<br/>
-{% endfor %}
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <h1>Hello World</h1>
+    <p>{{sentence|safe}}</p>
+    <h2>Fruits:</h2>
+    {% for fruits in fruits%}
+        {{fruits}}<br/>
+    {% endfor %}
+
+{% endblock %}
