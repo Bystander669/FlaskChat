@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+    <p><strong>User:</strong> {{ question}}</p><br/>
+    <p><strong>Chatbot:</strong> {{ formatted_response|safe }}</p><br/>
+    {% for message in messages %}
+            <tr>
+            <td>{{message.type}} {{message.created_at}}: {{message.content}}</td>
+            </tr>
+        {% endfor %}
+    <form action="{{ url_for('chatbot') }}" method="POST">
+        {{ form.hidden_tag() }}
+
+        {{ form.question.label(class="form-label") }}
+        {{ form.question(class="form-control") }}
+
+        <br/>
+        {{ form.submit(class="btn btn-secondary") }}
+    </form>
+</div>
+
+
+{% endblock %}

@@ -8,41 +8,82 @@
     </div>
 {% endfor %}
 {% if name %}
-    <h1>Update User</h1>
+    <h1>Hello {{name}}!</h1>
     <br/><br/><br/>
     <h2>User List: </h2>
     <table class="table table-hover table-striped">
         {% for our_user in our_users %}
             <tr>
-            <td>{{our_user.id}} - {{our_user.name}} - {{our_user.email}}</td>
+            <td>{{our_user.id}} -<a href="{{url_for('update', id=our_user.id)}}">{{our_user.username}}</a>- {{our_user.name}} - {{our_user.email}} - {{our_user.password_hash}} </td>
             </tr>
         {% endfor %}
     </table>
 {% else %}
-    <h1>Update User </h1>
-    <br/>
-    <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
-        <form method="POST">
-            {{ form.hidden_tag() }}
-
-            {{ form.name.label(class="form-label") }}
-            {{ form.name(class="form-control") }}
-            <br/>
-            {{ form.email.label(class="form-label") }}
-            {{ form.email(class="form-control") }}
-            <br/>
-            {{ form.submit(class="btn btn-secondary") }}
-        </form>
-    </div>
-
-    <br/><br/><br/>
-    <h2>User List: </h2>
-    <table class="table table-hover table-striped">
-        {% for our_user in our_users %}
-            <tr>
-            <td>{{our_user.id}} - {{our_user.name}} - {{our_user.email}}</td>
-            </tr>
-        {% endfor %}
-    </table>
+<h1>Update Details </h1>
+<br/>
+ 
+<br/>
+<div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+    <form action="" method="POST">
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token }}
+         <fieldset class="form-group">
+            <div class="form-group">
+                {{ form.username.label(class="form-control-label") }}
+                {% if form.username.errors %}
+                    {{form.username(class="form-control is-invalid")}}
+                    {% for error in form.username.errors %}
+                        <div class="invalid feedback">
+                            <span>{{error}}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {{ form.username(class="form-control") }}
+                {% endif %}
+                <br/>
+            </div>
+            <div class="form-group">
+                {{ form.name.label(class="form-control-label") }}
+                {% if form.name.errors %}
+                    {{form.name(class="form-control is-invalid")}}
+                    {% for error in form.name.errors %}
+                        <div class="invalid feedback">
+                            <span>{{error}}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {{ form.name(class="form-control") }}
+                {% endif %}
+                <br/>
+            </div>
+            <div class="form-group">
+                {{ form.email.label(class="form-control-label") }}
+                {% if form.email.errors %}
+                    {{form.email(class="form-control is-invalid")}}
+                    {% for error in form.email.errors %}
+                        <div class="invalid feedback">
+                            <span>{{error}}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {{ form.email(class="form-control") }}
+                {% endif %}
+                <br/>
+            </div><div class="form-group">
+                {{ form.submit(class="btn btn-info") }} <a href="{{url_for('delete', id=id)}}" class = "btn btn-danger" onclick="return confirm('Are you sure you want to delete user?')">Delete</a> 
+            </div>
+                      
+         </fieldset>   
+    </form>
+</div> 
+<br/><br/><br/>
+<h2>User List: </h2>
+<table class="table table-hover table-striped">
+    {% for our_user in our_users %}
+        <tr>
+        <td> {{our_user.id}} - <a href="{{url_for('update', id=our_user.id)}}">{{our_user.username}}</a> - {{our_user.name}} - {{our_user.email}} - {{our_user.password_hash}}  </td>
+        </tr>
+    {% endfor %}
+</table>
 {% endif %}
 {% endblock %}

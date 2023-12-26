@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% for message in get_flashed_messages() %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {{message}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endfor %}
+
+<h1>Login</h1>
+<br/>
+<div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+    <form action="" method="POST">
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token }}
+         <fieldset class="form-group">
+            <div class="form-group">
+                {{ form.username.label(class="form-control-label") }}
+                {% if form.username.errors %}
+                    {{form.username(class="form-control is-invalid")}}
+                    {% for error in form.username.errors %}
+                        <div class="invalid feedback">
+                            <span>{{error}}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {{ form.username(class="form-control") }}
+                {% endif %}
+                <br/>
+            </div>
+            <div class="form-group">
+                {{ form.password.label(class="form-control-label") }}
+                {% if form.password.errors %}
+                    {{form.password(class="form-control is-invalid")}}
+                    {% for error in form.password.errors %}
+                        <div class="invalid feedback">
+                            <span>{{error}}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {{ form.password(class="form-control") }}
+                {% endif %}
+                <br/>
+            </div><div class="form-group">
+                {{ form.submit(class="btn btn-info") }}
+            </div>           
+         </fieldset>   
+    </form>
+</div>  
+
+{% endblock %}
