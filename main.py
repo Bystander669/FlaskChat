@@ -12,7 +12,8 @@ from langchain.memory.chat_message_histories import SQLChatMessageHistory
 from langchain.memory.chat_message_histories.sql import BaseMessageConverter
 from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from sqlalchemy import Column, DateTime, Integer, Text
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 
 #create a flask instance
@@ -109,15 +110,6 @@ class CustomMessageConverter(BaseMessageConverter):
 
     def get_sql_model_class(self) -> Any:
         return CustomMessage
-
-
-chat_message_history = SQLChatMessageHistory(
-    session_id="test_session",
-    connection_string="mysql+mysqlconnector://root:bystander_669@localhost/users",
-    custom_message_converter=CustomMessageConverter(author_email="test@example.com"),
-)
-
-
 
 
 
@@ -269,17 +261,19 @@ def chatbot():
     connection_string="mysql+mysqlconnector://root:bystander_669@localhost/users",
     custom_message_converter=CustomMessageConverter(author_email=current_user.email),
     )
+    messages = message_history.messages
+    current_user_email = current_user.email
     form = Chatform()
     if form.validate_on_submit():
         question = form.question.data
         response = run_openai_llm_chain(question, message_history)
         formatted_response = response.replace('\n', '<br>')
         form.question.data = ''
-        return render_template('chatbot.html', question=question, formatted_response=formatted_response, form=form)
+        return render_template('chatbot.html', question=question, formatted_response=formatted_response, form=form, messages=messages, current_user_email=current_user_email)
     else:
         form = Chatform()
     form.question.data = ''
-    return render_template('chatbot.html', form=form)
+    return render_template('chatbot.html', form=form, messages=messages, current_user_email=current_user_email)
 
  
 def load_vectorstore():

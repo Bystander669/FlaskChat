@@ -2,14 +2,19 @@
 
 {% block content %}
 
+
 <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
-    <p><strong>User:</strong> {{ question}}</p><br/>
-    <p><strong>Chatbot:</strong> {{ formatted_response|safe }}</p><br/>
-    {% for message in messages %}
-            <tr>
-            <td>{{message.type}} {{message.created_at}}: {{message.content}}</td>
-            </tr>
+    <div class="chat-history">
+        {% for message in messages %}
+                <div class="{% if message.type == 'ai'%} chat-row  {% else %} row-reverse {% endif %}">
+                    <img class="chat-icon" src="{{ url_for('static',filename='img/' ~ ('chatbot.png' if message.type == 'ai' else 'user_icon.png')) }}"width=32 height=32>
+                    <div class="chat-bubble {% if message.type == 'ai'%} ai-bubble  {% else %} human-bubble {% endif %}">
+                        &#8203;{{message.content | replace('\n', '<br>') |safe}}
+                    </div>
+                </div>
         {% endfor %}
+    </div>
+    <hr>
     <form action="{{ url_for('chatbot') }}" method="POST">
         {{ form.hidden_tag() }}
 
