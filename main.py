@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, request, redirect, url_for
+from flask import Flask, render_template, flash, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from webforms import AddUserform, LoginForm, UpdateUser, Chatform
@@ -6,15 +6,20 @@ from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import os
-
+from dotenv import load_dotenv
 from typing import Any
 from langchain.memory.chat_message_histories import SQLChatMessageHistory
 from langchain.memory.chat_message_histories.sql import BaseMessageConverter
 from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from sqlalchemy import Column, DateTime, Integer, Text
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
+
+
+load_dotenv()
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 
 #create a flask instance
 app = Flask(__name__)
@@ -22,7 +27,7 @@ app = Flask(__name__)
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 
 #mysqldb
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+mysqlconnector://root:bystander_669@localhost/users"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ["SQLALCHEMY_DATABASE_URI"]
 
 #secret key
 app.config['SECRET_KEY'] = "password"
@@ -111,6 +116,10 @@ class CustomMessageConverter(BaseMessageConverter):
     def get_sql_model_class(self) -> Any:
         return CustomMessage
 
+
+engine = create_engine(os.environ["SQLALCHEMY_DATABASE_URI"])
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
 
@@ -258,22 +267,21 @@ from langchain.embeddings import HuggingFaceEmbeddings
 def chatbot():
     message_history = SQLChatMessageHistory(
     session_id="test_session",
-    connection_string="mysql+mysqlconnector://root:bystander_669@localhost/users",
+    connection_string=os.environ["SQLALCHEMY_DATABASE_URI"],
     custom_message_converter=CustomMessageConverter(author_email=current_user.email),
     )
-    messages = message_history.messages
-    current_user_email = current_user.email
+    messages = session.query(CustomMessage).filter_by(author_email=current_user.email).all()
     form = Chatform()
     if form.validate_on_submit():
         question = form.question.data
         response = run_openai_llm_chain(question, message_history)
         formatted_response = response.replace('\n', '<br>')
         form.question.data = ''
-        return render_template('chatbot.html', question=question, formatted_response=formatted_response, form=form, messages=messages, current_user_email=current_user_email)
+        return render_template('chatbot.html', question=question, formatted_response=formatted_response, form=form, messages=messages)
     else:
         form = Chatform()
     form.question.data = ''
-    return render_template('chatbot.html', form=form, messages=messages, current_user_email=current_user_email)
+    return render_template('chatbot.html', form=form, messages=messages)
 
  
 def load_vectorstore():
@@ -314,7 +322,7 @@ def run_openai_llm_chain(question, message_history):
     )
 
     # chat completion llm
-    llm = ChatOpenAI(openai_api_key="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", temperature=0.3)
+    llm = ChatOpenAI(temperature=0.3)
 
 
     
@@ -344,8 +352,8 @@ from langchain_experimental.sql import SQLDatabaseChain
 @app.route('/adminbot', methods=['GET','POST'])
 @login_required
 def adminbot():
-    db = SQLDatabase.from_uri("mysql+mysqlconnector://root:bystander_669@localhost/users")
-    llm = OpenAI(temperature=0, verbose=True, openai_api_key="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")
+    db = SQLDatabase.from_uri(os.environ["SQLALCHEMY_DATABASE_URI"])
+    llm = OpenAI(temperature=0, verbose=True)
     form = Chatform()
     if form.validate_on_submit():
         question = form.question.data
