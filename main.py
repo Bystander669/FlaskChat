@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, request, redirect, url_for, jsonify
+from flask import Flask, render_template, flash, request, redirect, url_for, session as flask_session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from webforms import AddUserform, LoginForm, UpdateUser, Chatform
@@ -117,18 +117,11 @@ class CustomMessageConverter(BaseMessageConverter):
         return CustomMessage
 
 
-engine = create_engine(os.environ["SQLALCHEMY_DATABASE_URI"])
-Session = sessionmaker(bind=engine)
-session = Session()
-
-
 
 #create a route decorator
 @app.route('/')
 def index():
-    sentence = 'teach <strong>me</strong> something'
-    fruits = ['apple','banana','durian','mango',69]
-    return render_template('index.html',sentence=sentence,fruits=fruits)
+    return render_template('index.html')
 
 
 #http://127.0.0.1:5000/user/(custom name)
@@ -249,7 +242,6 @@ def delete(id):
 
 
 from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.document_loaders import WebBaseLoader
 from langchain.vectorstores.chroma import Chroma
 from langchain.text_splitter import CharacterTextSplitter
@@ -259,31 +251,43 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts.prompt import PromptTemplate
 from langchain.llms import OpenAI
 from langchain.embeddings import HuggingFaceEmbeddings
-
+import uuid
 
 
 @app.route('/chatbot', methods=['GET','POST'])
 @login_required
 def chatbot():
+    session_id = flask_session.get('session_id')
+    if session_id is None:
+        session_id = generate_session_id()  # Replace with your session ID generation logic
+        flask_session['session_id'] = session_id
+
     message_history = SQLChatMessageHistory(
-    session_id="test_session",
+    session_id=current_user.id,
     connection_string=os.environ["SQLALCHEMY_DATABASE_URI"],
     custom_message_converter=CustomMessageConverter(author_email=current_user.email),
     )
-    messages = session.query(CustomMessage).filter_by(author_email=current_user.email).all()
+
+    engine = create_engine(os.environ["SQLALCHEMY_DATABASE_URI"])
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+
     form = Chatform()
     if form.validate_on_submit():
         question = form.question.data
-        response = run_openai_llm_chain(question, message_history)
-        formatted_response = response.replace('\n', '<br>')
+        run_openai_llm_chain(question, message_history)
         form.question.data = ''
-        return render_template('chatbot.html', question=question, formatted_response=formatted_response, form=form, messages=messages)
+        messages = session.query(CustomMessage).filter_by(author_email=current_user.email).all()
+        return render_template('chatbot.html', form=form, messages=messages)
     else:
         form = Chatform()
-    form.question.data = ''
+        messages = session.query(CustomMessage).filter_by(author_email=current_user.email).all()
     return render_template('chatbot.html', form=form, messages=messages)
 
- 
+def generate_session_id():
+    return str(uuid.uuid4())
+
 def load_vectorstore():
     persist_directory = 'vectore_db'
     embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')

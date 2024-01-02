@@ -15,15 +15,29 @@
         {% endfor %}
     </div>
     <hr>
-    <form action="{{ url_for('chatbot') }}" method="POST">
-        {{ form.hidden_tag() }}
-
-        {{ form.question.label(class="form-label") }}
-        {{ form.question(class="form-control") }}
-
+<form action="" method="POST">
+    {{ form.hidden_tag() }}
+    {{ form.csrf_token }}
+    <fieldset class="form-group">
+        <div class="form-group">
+            {{ form.question.label(class="form-control-label") }}
+            {% if form.question.errors %}
+                {{form.quesion(class="form-control is-invalid")}}
+                {% for error in form.question.errors %}
+                    <div class="invalid feedback">
+                        <span>{{error}}</span>
+                    </div>
+                {% endfor %}
+            {% else %}
+                {{ form.question(class="form-control") }}
+            {% endif %}
         <br/>
-        {{ form.submit(class="btn btn-secondary") }}
-    </form>
+        </div>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-info") }}
+        </div>           
+    </fieldset>   
+</form>
 </div>
 
 
