@@ -4,7 +4,7 @@ body{
 .chat-row {
     display: flex;
     margin: 5px;
-    width: 100%;
+    width: 80%;
 }   
 
 .row-reverse {
@@ -35,3 +35,4 @@ body{
 .chat-icon {
     border-radius: 5px;
 }
+

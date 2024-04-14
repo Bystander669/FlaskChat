@@ -120,6 +120,7 @@ class CustomMessageConverter(BaseMessageConverter):
 
 #create a route decorator
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
@@ -145,10 +146,43 @@ def internal_server_error(e):
 
 
 
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    return render_template('profile.html')
+
+
 @app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    engine = create_engine(os.environ["SQLALCHEMY_DATABASE_URI"])
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    # Query the messages for the current user's email
+    messages = session.query(CustomMessage).filter_by(type="human").all()
+
+
+
+    # Filter the messages to get only the ones that were created today
+    today = datetime.now().date()
+    messages_today = [message for message in messages if message.created_at.date() == today]
+    # Get the total number of messages today
+    total_messages_today = len(messages_today)
+
+
+    # Filter the messages to get only the ones that were created in the specified month
+    current_month = datetime.now().month
+    messages_in_month = [message for message in messages if message.created_at.month == current_month]
+    # Get the total number of messages in the month
+    total_messages_in_month = len(messages_in_month)
+
+
+    #Filter the messages to get only the ones that were created in the specified week
+    current_week = datetime.now().isocalendar()[1]
+    messages_in_week = [message for message in messages if message.created_at.isocalendar()[1] == current_week]
+    # Get the total number of messages in the week
+    total_messages_in_week = len(messages_in_week)
+    return render_template('dashboard.html', total_messages_today=total_messages_today, total_messages_in_month=total_messages_in_month, total_messages_in_week=total_messages_in_week)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -159,7 +193,7 @@ def login():
             if check_password_hash(user.password_hash, form.password.data):
                 login_user(user)
                 flash("login successfully")
-                return redirect(url_for('dashboard'))
+                return redirect(url_for('profile'))
             else:
                 flash('wrong password')
         else:
@@ -189,7 +223,7 @@ def update(id):
         try:
             db.session.commit()
             flash("User Updated Succ")
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('profile'))
         except:
             flash("Update failed....try again")
             return render_template('update.html', form=form, name_to_update=name_to_update, id=id, our_users=our_users)
@@ -279,7 +313,7 @@ def chatbot():
         run_openai_llm_chain(question, message_history)
         form.question.data = ''
         messages = session.query(CustomMessage).filter_by(author_email=current_user.email).all()
-        return render_template('chatbot.html', form=form, messages=messages)
+        return redirect(url_for('chatbot'))
     else:
         form = Chatform()
         messages = session.query(CustomMessage).filter_by(author_email=current_user.email).all()
@@ -320,6 +354,7 @@ def run_openai_llm_chain(question, message_history):
     {question}
     Answer:
     """
+
     prompt = PromptTemplate(
     input_variables=["chat_history", "context", "question"],
     template=template,
